@@ -1,0 +1,187 @@
+
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Fragebogen Angst/Sorge (15 Items)</title>
+  <meta name="description" content="Selbsttest: Angst/Sorge – 15 Items, Sofortauswertung."/>
+  <style>
+    :root { --bg:#0f172a; --card:#111827; --muted:#94a3b8; --text:#e5e7eb; --accent:#22d3ee; }
+    html,body{margin:0; padding:0; background:linear-gradient(180deg,#0b1220,#0f172a 40%,#0b1220); color:var(--text); font-family: system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,sans-serif;}
+    .container{max-width:960px; margin:40px auto; padding:24px;}
+    .card{background:rgba(17,24,39,.7); backdrop-filter: blur(6px); border:1px solid rgba(255,255,255,.06); border-radius:18px; padding:24px 24px 8px; box-shadow:0 8px 30px rgba(0,0,0,.35);}
+    h1{font-size:clamp(24px,4vw,34px); margin:0 0 8px;}
+    p.lead{color:var(--muted); margin:0 0 20px;}
+    .grid-qs{display:grid; grid-template-columns: 1fr; gap:12px}
+    .item{border:1px solid rgba(255,255,255,.06); border-radius:14px; padding:14px 14px 10px;}
+    .item h3{margin:0 0 10px; font-size:16px; font-weight:600;}
+    .scale{display:flex; gap:10px; align-items:center; flex-wrap:wrap}
+    .scale label{display:grid; place-items:center; width:42px; height:42px; border-radius:10px; border:1px solid rgba(255,255,255,.08); cursor:pointer;}
+    .scale input{display:none}
+    .scale input:checked + span{outline:2px solid var(--accent); box-shadow:0 0 0 4px rgba(34,211,238,.12) inset}
+    .legend{display:flex; justify-content:space-between; color:var(--muted); font-size:12px; margin-top:6px}
+    .actions{display:flex; gap:12px; flex-wrap:wrap; margin-top:18px}
+    button{appearance:none; border:none; padding:10px 14px; border-radius:12px; cursor:pointer; font-weight:600}
+    .primary{background:var(--accent); color:#001018}
+    .ghost{background:transparent; border:1px solid rgba(255,255,255,.1); color:var(--text)}
+    .result{margin-top:24px; border:1px dashed rgba(255,255,255,.18); border-radius:14px; padding:16px}
+    .result h2{margin:0 0 4px; font-size:20px}
+    .muted{color:var(--muted)}
+    footer{margin:28px 0 4px; color:var(--muted); font-size:12px}
+    input[type="text"]{margin-top:6px; padding:8px 10px; border-radius:10px; border:1px solid rgba(255,255,255,.15); background:#0b1020; color:var(--text); width:220px}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="card">
+      <h1>Fragebogen: Angst / Sorge</h1>
+      <p class="lead">Bitte beantworte die folgenden Aussagen auf einer Skala von <strong>1 = trifft gar nicht zu</strong> bis <strong>5 = trifft völlig zu</strong>. Die Auswertung erscheint sofort nach dem Absenden.</p>
+
+      <form id="form">
+        <div style="margin:8px 0 18px">
+          <label for="pid" class="muted">Teilnehmenden-Code (optional, z.&nbsp;B. Initialen+Geburtsmonat):</label><br/>
+          <input id="pid" name="pid" placeholder="z. B. EG05"/>
+        </div>
+
+        <div class="grid-qs" id="questions"></div>
+
+        <div class="actions">
+          <button type="submit" class="primary">Auswerten</button>
+          <button type="button" class="ghost" id="resetBtn">Zurücksetzen</button>
+          <button type="button" class="ghost" id="downloadBtn" title="Speichert Ergebnis + Antworten als CSV auf deinem Gerät">CSV herunterladen</button>
+        </div>
+      </form>
+
+      <div id="result" class="result" style="display:none">
+        <h2>Dein Ergebnis</h2>
+        <p><strong>Gesamtwert:</strong> <span id="score">–</span> von 75</p>
+        <p class="muted" id="band"></p>
+        <p class="muted" style="margin-top:8px">Interpretation: 15–30 = niedrige Ausprägung, 31–50 = mittlere Ausprägung, 51–75 = hohe Ausprägung von Angst/Sorge.</p>
+      </div>
+
+      <footer>
+        Dieses Tool ist rein informativ und ersetzt keine Diagnostik. © 2025
+      </footer>
+    </div>
+  </div>
+
+<script>
+const items = [
+  "Ich mache mir oft Gedanken über mögliche Gefahren oder Risiken.",
+  "Ich neige dazu, mir über die Zukunft Sorgen zu machen.",
+  "Wenn ein Problem auftaucht, denke ich zuerst an das Schlimmste.",
+  "Ich habe häufig das Gefühl, nicht genügend vorbereitet zu sein.",
+  "Ich vermeide Situationen, die mir unsicher oder riskant erscheinen.",
+  "Körperliche Anspannung (z. B. Herzklopfen) begleitet oft meine Sorgen.",
+  "Ich grüble lange über Entscheidungen nach, bevor ich handle.",
+  "Ich bin sehr empfindlich gegenüber unerwarteten Veränderungen.",
+  "Ich brauche Sicherheit und Kontrolle, um mich wohlzufühlen.",
+  "In sozialen Situationen mache ich mir viele Gedanken darüber, was andere über mich denken.",
+  "Ich neige dazu, Gefahren zu überschätzen.",
+  "Selbst kleine Fehler können mich lange beschäftigen.",
+  "Ich habe Schwierigkeiten, mich zu entspannen, wenn Dinge unklar sind.",
+  "Ich ziehe es vor, Pläne detailliert zu machen, um Risiken zu vermeiden.",
+  "Ich erlebe häufiger körperliche Stresssymptome wie Zittern, Schwitzen oder Nervosität."
+];
+
+// Prefill pid from URL (?pid=...)
+const urlParams = new URLSearchParams(location.search);
+const pidFromUrl = urlParams.get('pid');
+if (pidFromUrl) {
+  window.addEventListener('DOMContentLoaded', () => {
+    const el = document.getElementById('pid');
+    if (el) el.value = pidFromUrl;
+  });
+}
+
+const qsWrap = document.getElementById('questions');
+
+items.forEach((txt, idx) => {
+  const id = `q${idx+1}`;
+  const box = document.createElement('div');
+  box.className = 'item';
+  const title = document.createElement('h3');
+  title.textContent = `${idx+1}. ${txt}`;
+  box.appendChild(title);
+
+  const scale = document.createElement('div');
+  scale.className = 'scale';
+
+  for (let v=1; v<=5; v++){
+    const label = document.createElement('label');
+    const input = document.createElement('input');
+    input.type = 'radio';
+    input.name = id;
+    input.value = v;
+    input.required = true;
+    const span = document.createElement('span');
+    span.textContent = v;
+    label.appendChild(input); label.appendChild(span);
+    scale.appendChild(label);
+  }
+  box.appendChild(scale);
+  const legend = document.createElement('div');
+  legend.className = 'legend';
+  legend.innerHTML = '<span>1 = gar nicht</span><span>5 = völlig</span>';
+  box.appendChild(legend);
+
+  qsWrap.appendChild(box);
+});
+
+function interpret(score){
+  if(score <= 30) return 'Niedrige Ausprägung von Angst/Sorge.';
+  if(score <= 50) return 'Mittlere Ausprägung von Angst/Sorge.';
+  return 'Hohe Ausprägung von Angst/Sorge.';
+}
+
+function gather(){
+  const vals = items.map((_,i)=>{
+    const sel = document.querySelector(`input[name=q${i+1}]:checked`);
+    return sel ? Number(sel.value) : null;
+  });
+  return vals;
+}
+
+function toCSV(data){
+  const header = ['timestamp','teilnehmenden_code','gesamt', ...items.map((_,i)=>`item_${i+1}`)];
+  const lines = [header.join(',')];
+  lines.push([
+    new Date().toISOString(),
+    (document.getElementById('pid').value||'').replace(/,/g,';'),
+    data.reduce((a,b)=>a+b,0),
+    ...data
+  ].join(','));
+  return lines.join('\n');
+}
+
+const form = document.getElementById('form');
+form.addEventListener('submit', (e)=>{
+  e.preventDefault();
+  const vals = gather();
+  if(vals.some(v=>v===null)) return alert('Bitte alle 15 Items beantworten.');
+  const total = vals.reduce((a,b)=>a+b,0);
+  document.getElementById('score').textContent = total;
+  document.getElementById('band').textContent = interpret(total);
+  document.getElementById('result').style.display = 'block';
+  window.scrollTo({top:document.body.scrollHeight, behavior:'smooth'});
+});
+
+document.getElementById('resetBtn').addEventListener('click', ()=>{
+  form.reset();
+  document.getElementById('result').style.display = 'none';
+});
+
+document.getElementById('downloadBtn').addEventListener('click', ()=>{
+  const vals = gather();
+  if(vals.some(v=>v===null)) return alert('Bitte alle 15 Items beantworten, dann CSV speichern.');
+  const blob = new Blob([toCSV(vals)], {type:'text/csv;charset=utf-8;'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'angst_sorge_ergebnis.csv';
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url), 2000);
+});
+</script>
+</body>
+</html>
