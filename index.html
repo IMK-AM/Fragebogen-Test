@@ -1,187 +1,216 @@
-
 <!DOCTYPE html>
 <html lang="de">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Fragebogen Angst/Sorge (15 Items)</title>
-  <meta name="description" content="Selbsttest: Angst/Sorge – 15 Items, Sofortauswertung."/>
+  <title>Was bin ich für ein Emotionstyp?</title>
+  <meta name="description" content="Online-Fragebogen mit 48 Items zu vier Emotionsfeldern – mit Sofortauswertung und CSV-Export."/>
   <style>
-    :root { --bg:#0f172a; --card:#111827; --muted:#94a3b8; --text:#e5e7eb; --accent:#22d3ee; }
-    html,body{margin:0; padding:0; background:linear-gradient(180deg,#0b1220,#0f172a 40%,#0b1220); color:var(--text); font-family: system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,sans-serif;}
-    .container{max-width:960px; margin:40px auto; padding:24px;}
-    .card{background:rgba(17,24,39,.7); backdrop-filter: blur(6px); border:1px solid rgba(255,255,255,.06); border-radius:18px; padding:24px 24px 8px; box-shadow:0 8px 30px rgba(0,0,0,.35);}
-    h1{font-size:clamp(24px,4vw,34px); margin:0 0 8px;}
-    p.lead{color:var(--muted); margin:0 0 20px;}
-    .grid-qs{display:grid; grid-template-columns: 1fr; gap:12px}
-    .item{border:1px solid rgba(255,255,255,.06); border-radius:14px; padding:14px 14px 10px;}
-    .item h3{margin:0 0 10px; font-size:16px; font-weight:600;}
-    .scale{display:flex; gap:10px; align-items:center; flex-wrap:wrap}
-    .scale label{display:grid; place-items:center; width:42px; height:42px; border-radius:10px; border:1px solid rgba(255,255,255,.08); cursor:pointer;}
-    .scale input{display:none}
-    .scale input:checked + span{outline:2px solid var(--accent); box-shadow:0 0 0 4px rgba(34,211,238,.12) inset}
-    .legend{display:flex; justify-content:space-between; color:var(--muted); font-size:12px; margin-top:6px}
-    .actions{display:flex; gap:12px; flex-wrap:wrap; margin-top:18px}
-    button{appearance:none; border:none; padding:10px 14px; border-radius:12px; cursor:pointer; font-weight:600}
-    .primary{background:var(--accent); color:#001018}
-    .ghost{background:transparent; border:1px solid rgba(255,255,255,.1); color:var(--text)}
-    .result{margin-top:24px; border:1px dashed rgba(255,255,255,.18); border-radius:14px; padding:16px}
-    .result h2{margin:0 0 4px; font-size:20px}
-    .muted{color:var(--muted)}
-    footer{margin:28px 0 4px; color:var(--muted); font-size:12px}
-    input[type="text"]{margin-top:6px; padding:8px 10px; border-radius:10px; border:1px solid rgba(255,255,255,.15); background:#0b1020; color:var(--text); width:220px}
+    :root { --ink:#111827; --muted:#6b7280; --brand:#2563eb; --bg:#ffffff; --card:#ffffff; --line:#e5e7eb; }
+    html,body { margin:0; background:var(--bg); color:var(--ink); font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Arial, sans-serif; }
+    .container { max-width: 980px; margin: 36px auto; padding: 0 18px; }
+    .header { margin-bottom: 16px; }
+    h1 { font-size: clamp(22px, 3.2vw, 32px); margin:0 0 6px; }
+    p.lead { color: var(--muted); margin:0 0 20px; }
+    .card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 18px; }
+    .top { display:flex; gap:12px; align-items: center; justify-content: space-between; flex-wrap: wrap; }
+    .pid { display:flex; gap:10px; align-items:center; }
+    .pid input { border:1px solid var(--line); border-radius: 10px; padding:8px 10px; width:220px; }
+    .actions { display:flex; gap:10px; flex-wrap:wrap; }
+    button { appearance:none; border:1px solid var(--line); background:#fff; color:var(--ink); padding:10px 16px; border-radius:10px; cursor:pointer; font-weight:600; }
+    button.primary { background: var(--brand); color: #fff; border-color: var(--brand); }
+    .item { border:1px solid var(--line); border-radius:12px; padding:12px; }
+    .item h3 { margin:0 0 8px; font-size: 16px; }
+    .grid { display:grid; grid-template-columns: 1fr; gap:12px; }
+    @media (min-width: 760px) { .grid { grid-template-columns: 1fr 1fr; } }
+    .scale { display:flex; gap:10px; align-items:center; flex-wrap: wrap; }
+    .scale label { display:grid; place-items:center; width:44px; height:44px; border:1px solid var(--line); border-radius:10px; cursor:pointer; }
+    .scale input { display:none; }
+    .scale input:checked + span { outline: 2px solid var(--brand); box-shadow: 0 0 0 4px rgba(37,99,235,.12) inset; }
+    .legend { display:flex; justify-content:space-between; color:var(--muted); font-size:12px; margin-top:6px; }
+    .result { border:1px dashed var(--line); border-radius:12px; padding:14px; }
+    .table { width:100%; border-collapse: collapse; }
+    .table th, .table td { border-top:1px solid var(--line); padding:10px 6px; text-align:left; }
+    .muted { color: var(--muted); }
+    footer { color:var(--muted); font-size:12px; margin-top: 14px; }
   </style>
 </head>
 <body>
   <div class="container">
+    <div class="header">
+      <h1>Was bin ich für ein Emotionstyp?</h1>
+      <p class="lead">Bitte beantworten Sie die nachfolgenden Fragen, inwieweit die jeweiligen Statements auf Sie zutreffen auf der Skala von 1=trifft zu bis 5=trifft nicht zu:</p>
+    </div>
     <div class="card">
-      <h1>Fragebogen: Angst / Sorge</h1>
-      <p class="lead">Bitte beantworte die folgenden Aussagen auf einer Skala von <strong>1 = trifft gar nicht zu</strong> bis <strong>5 = trifft völlig zu</strong>. Die Auswertung erscheint sofort nach dem Absenden.</p>
-
-      <form id="form">
-        <div style="margin:8px 0 18px">
-          <label for="pid" class="muted">Teilnehmenden-Code (optional, z.&nbsp;B. Initialen+Geburtsmonat):</label><br/>
-          <input id="pid" name="pid" placeholder="z. B. EG05"/>
+      <div class="top">
+        <div class="pid">
+          <label for="pid" class="muted">Teilnehmenden‑Code (optional):</label>
+          <input id="pid" name="pid" placeholder="z. B. T01, AB07" />
         </div>
-
-        <div class="grid-qs" id="questions"></div>
-
         <div class="actions">
-          <button type="submit" class="primary">Auswerten</button>
-          <button type="button" class="ghost" id="resetBtn">Zurücksetzen</button>
-          <button type="button" class="ghost" id="downloadBtn" title="Speichert Ergebnis + Antworten als CSV auf deinem Gerät">CSV herunterladen</button>
+          <button id="shuffleBtn" type="button" title="Fragen neu mischen">Neu mischen</button>
+          <button id="resetBtn" type="button">Zurücksetzen</button>
+        </div>
+      </div>
+
+      <form id="form" style="margin-top:12px;">
+        <div id="questions" class="grid"></div>
+        <div class="actions" style="margin-top:12px;">
+          <button class="primary" type="submit">Auswerten</button>
+          <button id="downloadBtn" type="button" title="Antworten + Auswertung als CSV speichern">CSV herunterladen</button>
         </div>
       </form>
 
-      <div id="result" class="result" style="display:none">
-        <h2>Dein Ergebnis</h2>
-        <p><strong>Gesamtwert:</strong> <span id="score">–</span> von 75</p>
-        <p class="muted" id="band"></p>
-        <p class="muted" style="margin-top:8px">Interpretation: 15–30 = niedrige Ausprägung, 31–50 = mittlere Ausprägung, 51–75 = hohe Ausprägung von Angst/Sorge.</p>
+      <div id="result" class="result" style="display:none; margin-top:16px;">
+        <h2 style="margin:0 0 6px;">Auswertung</h2>
+        <p class="muted" style="margin:0 0 8px;">Die Werte werden pro Emotionsfeld berechnet. Skala: 1 = trifft zu, 5 = trifft nicht zu (intern invertiert).</p>
+        <table class="table">
+          <thead><tr><th>Emotionsfeld</th><th>Summe (12–60)</th><th>Einstufung</th></tr></thead>
+          <tbody id="resBody"></tbody>
+        </table>
       </div>
 
-      <footer>
-        Dieses Tool ist rein informativ und ersetzt keine Diagnostik. © 2025
-      </footer>
+      <footer>Weißer Hintergrund, keine Datenspeicherung auf dem Server. © 2025</footer>
     </div>
   </div>
 
 <script>
-const items = [
-  "Ich mache mir oft Gedanken über mögliche Gefahren oder Risiken.",
-  "Ich neige dazu, mir über die Zukunft Sorgen zu machen.",
-  "Wenn ein Problem auftaucht, denke ich zuerst an das Schlimmste.",
-  "Ich habe häufig das Gefühl, nicht genügend vorbereitet zu sein.",
-  "Ich vermeide Situationen, die mir unsicher oder riskant erscheinen.",
-  "Körperliche Anspannung (z. B. Herzklopfen) begleitet oft meine Sorgen.",
-  "Ich grüble lange über Entscheidungen nach, bevor ich handle.",
-  "Ich bin sehr empfindlich gegenüber unerwarteten Veränderungen.",
-  "Ich brauche Sicherheit und Kontrolle, um mich wohlzufühlen.",
-  "In sozialen Situationen mache ich mir viele Gedanken darüber, was andere über mich denken.",
-  "Ich neige dazu, Gefahren zu überschätzen.",
-  "Selbst kleine Fehler können mich lange beschäftigen.",
-  "Ich habe Schwierigkeiten, mich zu entspannen, wenn Dinge unklar sind.",
-  "Ich ziehe es vor, Pläne detailliert zu machen, um Risiken zu vermeiden.",
-  "Ich erlebe häufiger körperliche Stresssymptome wie Zittern, Schwitzen oder Nervosität."
-];
+const ITEMS = [{"id": 1, "text": "Ich mache mir oft Gedanken über mögliche Gefahren oder Risiken.", "field": "Angst/Sorge"}, {"id": 2, "text": "Ich neige dazu, mir über die Zukunft Sorgen zu machen.", "field": "Angst/Sorge"}, {"id": 3, "text": "Wenn ein Problem auftaucht, denke ich zuerst an das Schlimmste.", "field": "Angst/Sorge"}, {"id": 4, "text": "Ich habe häufig das Gefühl, nicht genügend vorbereitet zu sein.", "field": "Angst/Sorge"}, {"id": 5, "text": "Ich vermeide Situationen, die mir unbekannt, unsicher oder riskant erscheinen.", "field": "Angst/Sorge"}, {"id": 6, "text": "Körperliche Anspannung (z. B. Herzklopfen) begleitet oft meine Sorgen.", "field": "Angst/Sorge"}, {"id": 7, "text": "Ich grüble lange über Entscheidungen nach, bevor ich handle.", "field": "Angst/Sorge"}, {"id": 8, "text": "Ich bin sehr empfindlich gegenüber unerwarteten Veränderungen.", "field": "Angst/Sorge"}, {"id": 9, "text": "In sozialen Situationen mache ich mir viele Gedanken darüber, was andere über mich denken.", "field": "Angst/Sorge"}, {"id": 10, "text": "Selbst kleine Fehler können mich lange beschäftigen.", "field": "Angst/Sorge"}, {"id": 11, "text": "Ich habe Schwierigkeiten, mich zu entspannen, wenn Dinge unklar sind.", "field": "Angst/Sorge"}, {"id": 12, "text": "Ich ziehe es vor, Pläne detailliert zu machen, um Risiken zu vermeiden.", "field": "Angst/Sorge"}, {"id": 13, "text": "Wenn mich jemand kritisiert, reagiere ich schnell gereizt.", "field": "Ärger/Wut"}, {"id": 14, "text": "Ich habe oft das Bedürfnis, meinen Ärger direkt auszudrücken.", "field": "Ärger/Wut"}, {"id": 15, "text": "Wenn ich mich unfair behandelt fühle, fällt es mir schwer, ruhig zu bleiben.", "field": "Ärger/Wut"}, {"id": 16, "text": "Kleine Ärgernisse bringen mich manchmal schnell aus der Fassung.", "field": "Ärger/Wut"}, {"id": 17, "text": "Ich neige dazu, laut zu werden, wenn ich mich ärgere.", "field": "Ärger/Wut"}, {"id": 18, "text": "Ich kann mich lange über Fehlverhalten anderer ärgern.", "field": "Ärger/Wut"}, {"id": 19, "text": "Ich empfinde Ärger oft körperlich (z. B. Muskelanspannung, erhöhter Puls).", "field": "Ärger/Wut"}, {"id": 20, "text": "Wenn ich etwas als respektlos empfinde, reagiere ich stark.", "field": "Ärger/Wut"}, {"id": 21, "text": "Ich neige zu impulsivem Handeln, wenn ich wütend bin.", "field": "Ärger/Wut"}, {"id": 22, "text": "Mein Ärger kann mich manchmal noch Tage später beschäftigen.", "field": "Ärger/Wut"}, {"id": 23, "text": "Ich habe Schwierigkeiten, anderen zu verzeihen, wenn sie mich verletzt haben.", "field": "Ärger/Wut"}, {"id": 24, "text": "Ich neige dazu, im Ärger schnell Schuldige zu suchen.", "field": "Ärger/Wut"}, {"id": 25, "text": "Ich bin schnell niedergeschlagen, wenn Dinge nicht wie geplant laufen.", "field": "Enttäuschung/Trauer"}, {"id": 26, "text": "Ich empfinde oft Wehmut über vergangene Erlebnisse.", "field": "Enttäuschung/Trauer"}, {"id": 27, "text": "Rückschläge lassen mich lange nicht los.", "field": "Enttäuschung/Trauer"}, {"id": 28, "text": "Ich fühle mich manchmal wertlos, wenn ich ein Ziel nicht erreiche.", "field": "Enttäuschung/Trauer"}, {"id": 29, "text": "Traurige Erlebnisse anderer berühren mich stark.", "field": "Enttäuschung/Trauer"}, {"id": 30, "text": "Ich neige dazu, mich zurückzuziehen, wenn ich enttäuscht bin.", "field": "Enttäuschung/Trauer"}, {"id": 31, "text": "Ich empfinde häufig eine gewisse Melancholie ohne erkennbaren Grund.", "field": "Enttäuschung/Trauer"}, {"id": 32, "text": "Ich denke oft an verpasste Chancen.", "field": "Enttäuschung/Trauer"}, {"id": 33, "text": "Nach Enttäuschungen brauche ich lange, um wieder motiviert zu sein.", "field": "Enttäuschung/Trauer"}, {"id": 34, "text": "Wenn ich traurig bin, verliere ich leicht den Antrieb.", "field": "Enttäuschung/Trauer"}, {"id": 35, "text": "Ich habe das Gefühl, dass ich Verluste besonders intensiv erlebe.", "field": "Enttäuschung/Trauer"}, {"id": 36, "text": "Ich neige dazu, Situationen pessimistisch zu betrachten, wenn ich enttäuscht bin.", "field": "Enttäuschung/Trauer"}, {"id": 37, "text": "Ich vergleiche mich oft mit anderen.", "field": "Neid/Eifersucht"}, {"id": 38, "text": "Wenn jemand anderes Erfolg hat, fühle ich mich manchmal minderwertig.", "field": "Neid/Eifersucht"}, {"id": 39, "text": "Ich ärgere mich, wenn andere Dinge haben, die ich nicht habe.", "field": "Neid/Eifersucht"}, {"id": 40, "text": "Ich verspüre häufig das Bedürfnis, mit anderen mitzuhalten.", "field": "Neid/Eifersucht"}, {"id": 41, "text": "Ich neige dazu, mich unzufrieden zu fühlen, wenn andere gelobt werden.", "field": "Neid/Eifersucht"}, {"id": 42, "text": "Wenn jemand meinem Partner nahekommt, fühle ich mich unwohl.", "field": "Neid/Eifersucht"}, {"id": 43, "text": "Ich achte stark darauf, was andere besitzen oder erreichen.", "field": "Neid/Eifersucht"}, {"id": 44, "text": "Es fällt mir schwer, mich uneingeschränkt für den Erfolg anderer zu freuen.", "field": "Neid/Eifersucht"}, {"id": 45, "text": "Ich verspüre manchmal den Wunsch, anderen etwas nicht zu gönnen.", "field": "Neid/Eifersucht"}, {"id": 46, "text": "Ich habe Angst, wichtige Beziehungen an andere zu verlieren.", "field": "Neid/Eifersucht"}, {"id": 47, "text": "Ich ertappe mich dabei, dass ich andere manchmal als Konkurrenten sehe.", "field": "Neid/Eifersucht"}, {"id": 48, "text": "Ich bin sehr schnell eifersüchtig.", "field": "Neid/Eifersucht"}];
 
-// Prefill pid from URL (?pid=...)
-const urlParams = new URLSearchParams(location.search);
-const pidFromUrl = urlParams.get('pid');
-if (pidFromUrl) {
-  window.addEventListener('DOMContentLoaded', () => {
-    const el = document.getElementById('pid');
-    if (el) el.value = pidFromUrl;
-  });
+function shuffle(array) { 
+  for (let i = array.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1)); 
+    [array[i], array[j]] = [array[j], array[i]]; 
+  }
+  return array;
 }
+
+const FIELDS = ["Angst/Sorge", "Ärger/Wut", "Enttäuschung/Trauer", "Neid/Eifersucht"];
+const FIELD_ORDER = FIELDS.slice();
 
 const qsWrap = document.getElementById('questions');
-
-items.forEach((txt, idx) => {
-  const id = `q${idx+1}`;
-  const box = document.createElement('div');
-  box.className = 'item';
-  const title = document.createElement('h3');
-  title.textContent = `${idx+1}. ${txt}`;
-  box.appendChild(title);
-
-  const scale = document.createElement('div');
-  scale.className = 'scale';
-
-  for (let v=1; v<=5; v++){
-    const label = document.createElement('label');
-    const input = document.createElement('input');
-    input.type = 'radio';
-    input.name = id;
-    input.value = v;
-    input.required = true;
-    const span = document.createElement('span');
-    span.textContent = v;
-    label.appendChild(input); label.appendChild(span);
-    scale.appendChild(label);
-  }
-  box.appendChild(scale);
-  const legend = document.createElement('div');
-  legend.className = 'legend';
-  legend.innerHTML = '<span>1 = gar nicht</span><span>5 = völlig</span>';
-  box.appendChild(legend);
-
-  qsWrap.appendChild(box);
-});
-
-function interpret(score){
-  if(score <= 30) return 'Niedrige Ausprägung von Angst/Sorge.';
-  if(score <= 50) return 'Mittlere Ausprägung von Angst/Sorge.';
-  return 'Hohe Ausprägung von Angst/Sorge.';
-}
-
-function gather(){
-  const vals = items.map((_,i)=>{
-    const sel = document.querySelector(`input[name=q${i+1}]:checked`);
-    return sel ? Number(sel.value) : null;
-  });
-  return vals;
-}
-
-function toCSV(data){
-  const header = ['timestamp','teilnehmenden_code','gesamt', ...items.map((_,i)=>`item_${i+1}`)];
-  const lines = [header.join(',')];
-  lines.push([
-    new Date().toISOString(),
-    (document.getElementById('pid').value||'').replace(/,/g,';'),
-    data.reduce((a,b)=>a+b,0),
-    ...data
-  ].join(','));
-  return lines.join('\n');
-}
-
 const form = document.getElementById('form');
-form.addEventListener('submit', (e)=>{
-  e.preventDefault();
-  const vals = gather();
-  if(vals.some(v=>v===null)) return alert('Bitte alle 15 Items beantworten.');
-  const total = vals.reduce((a,b)=>a+b,0);
-  document.getElementById('score').textContent = total;
-  document.getElementById('band').textContent = interpret(total);
-  document.getElementById('result').style.display = 'block';
-  window.scrollTo({top:document.body.scrollHeight, behavior:'smooth'});
+
+function render(items) { 
+  qsWrap.innerHTML = "";
+  items.forEach((it, idx) => {
+    const name = `q_${idx+1}`;
+    const card = document.createElement('div');
+    card.className = 'item';
+    const h3 = document.createElement('h3');
+    h3.textContent = `${idx+1}. ${it.text}`;
+    card.appendChild(h3);
+
+    const scale = document.createElement('div');
+    scale.className = 'scale';
+    for (let v = 1; v <= 5; v++) {
+      const label = document.createElement('label');
+      const input = document.createElement('input');
+      input.type = 'radio'; input.name = name; input.value = v; input.required = true;
+      const span = document.createElement('span'); span.textContent = v;
+      label.appendChild(input); label.appendChild(span);
+      scale.appendChild(label);
+    }
+    card.appendChild(scale);
+    const legend = document.createElement('div');
+    legend.className = 'legend';
+    legend.innerHTML = '<span>1 = trifft zu</span><span>5 = trifft nicht zu</span>';
+    card.appendChild(legend);
+
+    const meta = document.createElement('input');
+    meta.type = 'hidden'; meta.name = name+'_field'; meta.value = it.field;
+    card.appendChild(meta);
+
+    qsWrap.appendChild(card);
+  });
+}
+
+let randomItems = shuffle(ITEMS.slice());
+render(randomItems);
+
+document.getElementById('shuffleBtn').addEventListener('click', () => {
+  randomItems = shuffle(ITEMS.slice());
+  render(randomItems);
+  document.getElementById('result').style.display = 'none';
 });
 
-document.getElementById('resetBtn').addEventListener('click', ()=>{
+document.getElementById('resetBtn').addEventListener('click', () => {
   form.reset();
   document.getElementById('result').style.display = 'none';
 });
 
-document.getElementById('downloadBtn').addEventListener('click', ()=>{
-  const vals = gather();
-  if(vals.some(v=>v===null)) return alert('Bitte alle 15 Items beantworten, dann CSV speichern.');
-  const blob = new Blob([toCSV(vals)], {type:'text/csv;charset=utf-8;'});
+function classify(sum) {
+  if (sum >= 45) return "stark ausgeprägt";
+  if (sum >= 29) return "mittel ausgeprägt";
+  return "wenig ausgeprägt";
+}
+
+function compute() {
+  const perField = {"Angst/Sorge":0, "Ärger/Wut":0, "Enttäuschung/Trauer":0, "Neid/Eifersucht":0};
+  for (let i=0; i<randomItems.length; i++) {
+    const name = `q_${i+1}`;
+    const sel = document.querySelector(`input[name=${name}]:checked`);
+    if (!sel) return null;
+    const raw = Number(sel.value);
+    const intensity = 6 - raw;
+    const field = document.querySelector(`input[name=${name}_field]`).value;
+    perField[field] += intensity;
+  }
+  return perField;
+}
+
+form.addEventListener('submit', (e) => {
+  e.preventDefault();
+  const perField = compute();
+  if (!perField) return alert("Bitte alle Fragen beantworten.");
+  const tbody = document.getElementById('resBody');
+  tbody.innerHTML = "";
+  FIELD_ORDER.forEach(f => {
+    const tr = document.createElement('tr');
+    const sum = perField[f];
+    tr.innerHTML = `<td>${f}</td><td>${sum}</td><td>${classify(sum)}</td>`;
+    tbody.appendChild(tr);
+  });
+  document.getElementById('result').style.display = 'block';
+  window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+});
+
+function toCSV() {
+  const header = ["timestamp","teilnehmenden_code"];
+  const values = [new Date().toISOString(), (document.getElementById('pid').value||'').replace(/,/g,';')];
+  for (let i=0; i<randomItems.length; i++) {
+    header.push(`Q${i+1}_Antwort(1-5)`,`Q${i+1}_Feld`);
+    const sel = document.querySelector(`input[name=q_${i+1}]:checked`);
+    const field = document.querySelector(`input[name=q_${i+1}_field]`).value;
+    values.push(sel ? sel.value : "");
+    values.push(field);
+  }
+  header.push("Summe_Angst_Sorge","Klasse_Angst_Sorge","Summe_Aerger_Wut","Klasse_Aerger_Wut","Summe_Enttaeuschung_Trauer","Klasse_Enttaeuschung_Trauer","Summe_Neid_Eifersucht","Klasse_Neid_Eifersucht");
+  const sums = compute();
+  const row = values.concat([
+    sums["Angst/Sorge"], classify(sums["Angst/Sorge"]),
+    sums["Ärger/Wut"], classify(sums["Ärger/Wut"]),
+    sums["Enttäuschung/Trauer"], classify(sums["Enttäuschung/Trauer"]),
+    sums["Neid/Eifersucht"], classify(sums["Neid/Eifersucht"])
+  ]);
+  return header.join(",") + "\n" + row.join(",");
+}
+
+document.getElementById('downloadBtn').addEventListener('click', () => {
+  const sums = compute();
+  if (!sums) return alert("Bitte zuerst alle Fragen beantworten und auswerten.");
+  const csv = toCSV();
+  const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
-  a.href = url; a.download = 'angst_sorge_ergebnis.csv';
+  a.href = url; a.download = 'emotionstyp_auswertung.csv';
   document.body.appendChild(a); a.click(); a.remove();
   setTimeout(()=>URL.revokeObjectURL(url), 2000);
 });
+
+const urlParams = new URLSearchParams(location.search);
+const pidFromUrl = urlParams.get('pid');
+if (pidFromUrl) document.getElementById('pid').value = pidFromUrl;
 </script>
 </body>
 </html>
