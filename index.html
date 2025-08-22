@@ -4,15 +4,15 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Was bin ich für ein Emotionstyp?</title>
-  <meta name="description" content="Online-Fragebogen mit 48 Items zu vier Emotionsfeldern – mit Sofortauswertung und CSV-Export."/>
+  <meta name="description" content="Online-Fragebogen (48 Items) mit Sofortauswertung und PDF-Export."/>
   <style>
-    :root { --ink:#111827; --muted:#6b7280; --brand:#2563eb; --bg:#ffffff; --card:#ffffff; --line:#e5e7eb; }
-    html,body { margin:0; background:var(--bg); color:var(--ink); font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Arial, sans-serif; }
+    :root { --ink:#111827; --muted:#6b7280; --brand:#2563eb; --bg:#ffffff; --line:#e5e7eb; }
+    html,body { margin:0; background:#ffffff; color:var(--ink); font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Arial, sans-serif; }
     .container { max-width: 980px; margin: 36px auto; padding: 0 18px; }
     .header { margin-bottom: 16px; }
     h1 { font-size: clamp(22px, 3.2vw, 32px); margin:0 0 6px; }
     p.lead { color: var(--muted); margin:0 0 20px; }
-    .card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 18px; }
+    .card { background: #fff; border: 1px solid var(--line); border-radius: 14px; padding: 18px; }
     .top { display:flex; gap:12px; align-items: center; justify-content: space-between; flex-wrap: wrap; }
     .pid { display:flex; gap:10px; align-items:center; }
     .pid input { border:1px solid var(--line); border-radius: 10px; padding:8px 10px; width:220px; }
@@ -33,19 +33,24 @@
     .table th, .table td { border-top:1px solid var(--line); padding:10px 6px; text-align:left; }
     .muted { color: var(--muted); }
     footer { color:var(--muted); font-size:12px; margin-top: 14px; }
+    .printable { background:#fff; color:#000; }
   </style>
+  <!-- PDF-Bibliotheken (clientseitig, keine Server-Speicherung) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 </head>
 <body>
-  <div class="container">
+  <div class="container" id="app">
     <div class="header">
       <h1>Was bin ich für ein Emotionstyp?</h1>
-      <p class="lead">Bitte beantworten Sie die nachfolgenden Fragen, inwieweit die jeweiligen Statements auf Sie zutreffen auf der Skala von 1=trifft zu bis 5=trifft nicht zu:</p>
+      <p class="lead">Bitte beantworten Sie die nachfolgenden Fragen, inwieweit die jeweiligen Statements auf Sie zutreffen auf der Skala von <strong>1 = trifft nicht zu</strong> bis <strong>5 = trifft zu</strong>:</p>
     </div>
+
     <div class="card">
       <div class="top">
         <div class="pid">
-          <label for="pid" class="muted">Teilnehmenden‑Code (optional):</label>
-          <input id="pid" name="pid" placeholder="z. B. T01, AB07" />
+          <label for="pid" class="muted">Teilnehmenden-Code (optional):</label>
+          <input id="pid" name="pid" placeholder="z. B. T01, AB07" />
         </div>
         <div class="actions">
           <button id="shuffleBtn" type="button" title="Fragen neu mischen">Neu mischen</button>
@@ -57,13 +62,13 @@
         <div id="questions" class="grid"></div>
         <div class="actions" style="margin-top:12px;">
           <button class="primary" type="submit">Auswerten</button>
-          <button id="downloadBtn" type="button" title="Antworten + Auswertung als CSV speichern">CSV herunterladen</button>
+          <button id="pdfBtn" type="button" title="Fragebogen mit Antworten & Auswertung als PDF speichern">PDF herunterladen</button>
         </div>
       </form>
 
       <div id="result" class="result" style="display:none; margin-top:16px;">
         <h2 style="margin:0 0 6px;">Auswertung</h2>
-        <p class="muted" style="margin:0 0 8px;">Die Werte werden pro Emotionsfeld berechnet. Skala: 1 = trifft zu, 5 = trifft nicht zu (intern invertiert).</p>
+        <p class="muted" style="margin:0 0 8px;">Skala: 1 = trifft nicht zu, 5 = trifft zu. Höhere Summen bedeuten stärkere Ausprägung.</p>
         <table class="table">
           <thead><tr><th>Emotionsfeld</th><th>Summe (12–60)</th><th>Einstufung</th></tr></thead>
           <tbody id="resBody"></tbody>
@@ -75,23 +80,87 @@
   </div>
 
 <script>
-const ITEMS = [{"id": 1, "text": "Ich mache mir oft Gedanken über mögliche Gefahren oder Risiken.", "field": "Angst/Sorge"}, {"id": 2, "text": "Ich neige dazu, mir über die Zukunft Sorgen zu machen.", "field": "Angst/Sorge"}, {"id": 3, "text": "Wenn ein Problem auftaucht, denke ich zuerst an das Schlimmste.", "field": "Angst/Sorge"}, {"id": 4, "text": "Ich habe häufig das Gefühl, nicht genügend vorbereitet zu sein.", "field": "Angst/Sorge"}, {"id": 5, "text": "Ich vermeide Situationen, die mir unbekannt, unsicher oder riskant erscheinen.", "field": "Angst/Sorge"}, {"id": 6, "text": "Körperliche Anspannung (z. B. Herzklopfen) begleitet oft meine Sorgen.", "field": "Angst/Sorge"}, {"id": 7, "text": "Ich grüble lange über Entscheidungen nach, bevor ich handle.", "field": "Angst/Sorge"}, {"id": 8, "text": "Ich bin sehr empfindlich gegenüber unerwarteten Veränderungen.", "field": "Angst/Sorge"}, {"id": 9, "text": "In sozialen Situationen mache ich mir viele Gedanken darüber, was andere über mich denken.", "field": "Angst/Sorge"}, {"id": 10, "text": "Selbst kleine Fehler können mich lange beschäftigen.", "field": "Angst/Sorge"}, {"id": 11, "text": "Ich habe Schwierigkeiten, mich zu entspannen, wenn Dinge unklar sind.", "field": "Angst/Sorge"}, {"id": 12, "text": "Ich ziehe es vor, Pläne detailliert zu machen, um Risiken zu vermeiden.", "field": "Angst/Sorge"}, {"id": 13, "text": "Wenn mich jemand kritisiert, reagiere ich schnell gereizt.", "field": "Ärger/Wut"}, {"id": 14, "text": "Ich habe oft das Bedürfnis, meinen Ärger direkt auszudrücken.", "field": "Ärger/Wut"}, {"id": 15, "text": "Wenn ich mich unfair behandelt fühle, fällt es mir schwer, ruhig zu bleiben.", "field": "Ärger/Wut"}, {"id": 16, "text": "Kleine Ärgernisse bringen mich manchmal schnell aus der Fassung.", "field": "Ärger/Wut"}, {"id": 17, "text": "Ich neige dazu, laut zu werden, wenn ich mich ärgere.", "field": "Ärger/Wut"}, {"id": 18, "text": "Ich kann mich lange über Fehlverhalten anderer ärgern.", "field": "Ärger/Wut"}, {"id": 19, "text": "Ich empfinde Ärger oft körperlich (z. B. Muskelanspannung, erhöhter Puls).", "field": "Ärger/Wut"}, {"id": 20, "text": "Wenn ich etwas als respektlos empfinde, reagiere ich stark.", "field": "Ärger/Wut"}, {"id": 21, "text": "Ich neige zu impulsivem Handeln, wenn ich wütend bin.", "field": "Ärger/Wut"}, {"id": 22, "text": "Mein Ärger kann mich manchmal noch Tage später beschäftigen.", "field": "Ärger/Wut"}, {"id": 23, "text": "Ich habe Schwierigkeiten, anderen zu verzeihen, wenn sie mich verletzt haben.", "field": "Ärger/Wut"}, {"id": 24, "text": "Ich neige dazu, im Ärger schnell Schuldige zu suchen.", "field": "Ärger/Wut"}, {"id": 25, "text": "Ich bin schnell niedergeschlagen, wenn Dinge nicht wie geplant laufen.", "field": "Enttäuschung/Trauer"}, {"id": 26, "text": "Ich empfinde oft Wehmut über vergangene Erlebnisse.", "field": "Enttäuschung/Trauer"}, {"id": 27, "text": "Rückschläge lassen mich lange nicht los.", "field": "Enttäuschung/Trauer"}, {"id": 28, "text": "Ich fühle mich manchmal wertlos, wenn ich ein Ziel nicht erreiche.", "field": "Enttäuschung/Trauer"}, {"id": 29, "text": "Traurige Erlebnisse anderer berühren mich stark.", "field": "Enttäuschung/Trauer"}, {"id": 30, "text": "Ich neige dazu, mich zurückzuziehen, wenn ich enttäuscht bin.", "field": "Enttäuschung/Trauer"}, {"id": 31, "text": "Ich empfinde häufig eine gewisse Melancholie ohne erkennbaren Grund.", "field": "Enttäuschung/Trauer"}, {"id": 32, "text": "Ich denke oft an verpasste Chancen.", "field": "Enttäuschung/Trauer"}, {"id": 33, "text": "Nach Enttäuschungen brauche ich lange, um wieder motiviert zu sein.", "field": "Enttäuschung/Trauer"}, {"id": 34, "text": "Wenn ich traurig bin, verliere ich leicht den Antrieb.", "field": "Enttäuschung/Trauer"}, {"id": 35, "text": "Ich habe das Gefühl, dass ich Verluste besonders intensiv erlebe.", "field": "Enttäuschung/Trauer"}, {"id": 36, "text": "Ich neige dazu, Situationen pessimistisch zu betrachten, wenn ich enttäuscht bin.", "field": "Enttäuschung/Trauer"}, {"id": 37, "text": "Ich vergleiche mich oft mit anderen.", "field": "Neid/Eifersucht"}, {"id": 38, "text": "Wenn jemand anderes Erfolg hat, fühle ich mich manchmal minderwertig.", "field": "Neid/Eifersucht"}, {"id": 39, "text": "Ich ärgere mich, wenn andere Dinge haben, die ich nicht habe.", "field": "Neid/Eifersucht"}, {"id": 40, "text": "Ich verspüre häufig das Bedürfnis, mit anderen mitzuhalten.", "field": "Neid/Eifersucht"}, {"id": 41, "text": "Ich neige dazu, mich unzufrieden zu fühlen, wenn andere gelobt werden.", "field": "Neid/Eifersucht"}, {"id": 42, "text": "Wenn jemand meinem Partner nahekommt, fühle ich mich unwohl.", "field": "Neid/Eifersucht"}, {"id": 43, "text": "Ich achte stark darauf, was andere besitzen oder erreichen.", "field": "Neid/Eifersucht"}, {"id": 44, "text": "Es fällt mir schwer, mich uneingeschränkt für den Erfolg anderer zu freuen.", "field": "Neid/Eifersucht"}, {"id": 45, "text": "Ich verspüre manchmal den Wunsch, anderen etwas nicht zu gönnen.", "field": "Neid/Eifersucht"}, {"id": 46, "text": "Ich habe Angst, wichtige Beziehungen an andere zu verlieren.", "field": "Neid/Eifersucht"}, {"id": 47, "text": "Ich ertappe mich dabei, dass ich andere manchmal als Konkurrenten sehe.", "field": "Neid/Eifersucht"}, {"id": 48, "text": "Ich bin sehr schnell eifersüchtig.", "field": "Neid/Eifersucht"}];
+/* ============================================================
+   TODO: HIER DEINE 48 ITEMS EINFÜGEN
+   - genau 12 Einträge je Feld:
+     "Angst/Sorge", "Ärger/Wut", "Enttäuschung/Trauer", "Neid/Eifersucht"
+   - Format je Item: { text: "...", field: "Angst/Sorge" }
+   - Beispielstruktur ist unten als Platzhalter vorhanden – bitte ersetzen!
+   ============================================================ */
+const ITEMS = [
+  /* ------- ANGST/SORGE (12) ------- */
+  { text: "Ich mache mir oft Gedanken über mögliche Gefahren oder Risiken.", field: "Angst/Sorge" },
+  { text: "Ich neige dazu, mir über die Zukunft Sorgen zu machen.", field: "Angst/Sorge" },
+  { text: "Wenn ein Problem auftaucht, denke ich zuerst an das Schlimmste.", field: "Angst/Sorge" },
+  { text: "Ich habe häufig das Gefühl, für eine Aufgabe nicht genügend vorbereitet zu sein.", field: "Angst/Sorge" },
+  { text: "Ich vermeide Situationen, die mir unbekannt, unsicher oder riskant erscheinen.", field: "Angst/Sorge" },
+  { text: "Körperliche Anspannung (z. B. Herzklopfen) begleitet oft meine Sorgen.", field: "Angst/Sorge" },
+  { text: "Ich grüble lange über Entscheidungen nach, bevor ich handle.", field: "Angst/Sorge" },
+  { text: "Ich bin sehr empfindlich gegenüber unerwarteten Veränderungen.", field: "Angst/Sorge" },
+  { text: "In sozialen Situationen mache ich mir viele Gedanken darüber, was andere über mich denken.", field: "Angst/Sorge" },
+  { text: "Selbst kleine Fehler können mich lange beschäftigen.", field: "Angst/Sorge" },
+  { text: "Ich habe Schwierigkeiten, mich zu entspannen, wenn Dinge unklar sind.", field: "Angst/Sorge" },
+  { text: "Ich ziehe es vor, Pläne detailliert zu machen, um Risiken zu vermeiden.", field: "Angst/Sorge" },
 
-function shuffle(array) { 
+  /* ------- ÄRGER/WUT (12) ------- */
+  { text: "Wenn mich jemand kritisiert, reagiere ich schnell gereizt.", field: "Ärger/Wut" },
+  { text: "Ich habe oft das Bedürfnis, meinen Ärger direkt auszudrücken.", field: "Ärger/Wut" },
+  { text: "Wenn ich mich unfair behandelt fühle, fällt es mir schwer, ruhig zu bleiben.", field: "Ärger/Wut" },
+  { text: "Kleine Ärgernisse bringen mich manchmal schnell aus der Fassung.", field: "Ärger/Wut" },
+  { text: "Ich neige dazu, laut zu werden, wenn ich mich ärgere.", field: "Ärger/Wut" },
+  { text: "Ich kann mich lange über Fehlverhalten anderer ärgern.", field: "Ärger/Wut" },
+  { text: "Ich empfinde Ärger oft körperlich (z. B. Muskelanspannung, erhöhter Puls).", field: "Ärger/Wut" },
+  { text: "Wenn ich etwas als respektlos empfinde, reagiere ich stark.", field: "Ärger/Wut" },
+  { text: "Ich neige zu impulsivem Handeln, wenn ich wütend bin.", field: "Ärger/Wut" },
+  { text: "Mein Ärger kann mich manchmal noch Tage später beschäftigen.", field: "Ärger/Wut" },
+  { text: "Ich habe Schwierigkeiten, anderen zu verzeihen, wenn sie mich verletzt haben.", field: "Ärger/Wut" },
+  { text: "Ich neige dazu, im Ärger schnell Schuldige zu suchen.", field: "Ärger/Wut" },
+
+  /* ------- ENTTÄUSCHUNG/TRAUER (12) ------- */
+  { text: "Ich bin schnell niedergeschlagen, wenn Dinge nicht wie geplant laufen.", field: "Enttäuschung/Trauer" },
+  { text: "Ich empfinde oft Wehmut über vergangene Erlebnisse.", field: "Enttäuschung/Trauer" },
+  { text: "PRückschläge lassen mich lange nicht los.", field: "Enttäuschung/Trauer" },
+  { text: "Ich fühle mich manchmal wertlos, wenn ich ein Ziel nicht erreiche.", field: "Enttäuschung/Trauer" },
+  { text: "Traurige Erlebnisse anderer berühren mich stark.", field: "Enttäuschung/Trauer" },
+  { text: "Ich neige dazu, mich zurückzuziehen, wenn ich enttäuscht bin.", field: "Enttäuschung/Trauer" },
+  { text: "Ich empfinde häufig eine gewisse Melancholie ohne erkennbaren Grund.", field: "Enttäuschung/Trauer" },
+  { text: "Ich denke oft an verpasste Chancen.", field: "Enttäuschung/Trauer" },
+  { text: "Nach Enttäuschungen brauche ich lange, um wieder motiviert zu sein.", field: "Enttäuschung/Trauer" },
+  { text: "Wenn ich traurig bin, verliere ich leicht den Antrieb.", field: "Enttäuschung/Trauer" },
+  { text: "Ich habe das Gefühl, dass ich Verluste besonders intensiv erlebe.", field: "Enttäuschung/Trauer" },
+  { text: "Ich neige dazu, Situationen pessimistisch zu betrachten, wenn ich enttäuscht bin.", field: "Enttäuschung/Trauer" },
+
+  /* ------- NEID/EIFERSUCHT (12) ------- */
+  { text: "Ich vergleiche mich oft mit anderen.", field: "Neid/Eifersucht" },
+  { text: "Wenn jemand anderes Erfolg hat, fühle ich mich manchmal minderwertig.", field: "Neid/Eifersucht" },
+  { text: "Ich ärgere mich, wenn andere Dinge haben, die ich nicht habe.", field: "Neid/Eifersucht" },
+  { text: "Ich verspüre häufig das Bedürfnis, mit anderen mitzuhalten.", field: "Neid/Eifersucht" },
+  { text: "Ich neige dazu, mich unzufrieden zu fühlen, wenn andere gelobt werden.", field: "Neid/Eifersucht" },
+  { text: "Wenn jemand meinem Partner nahekommt, fühle ich mich unwohl.", field: "Neid/Eifersucht" },
+  { text: "Ich achte stark darauf, was andere besitzen oder erreichen.", field: "Neid/Eifersucht" },
+  { text: "Es fällt mir schwer, mich uneingeschränkt für den Erfolg anderer zu freuen.", field: "Neid/Eifersucht" },
+  { text: "Ich verspüre manchmal den Wunsch, anderen etwas nicht zu gönnen.", field: "Neid/Eifersucht" },
+  { text: "Ich habe Angst, wichtige Beziehungen an andere zu verlieren.", field: "Neid/Eifersucht" },
+  { text: "Ich ertappe mich dabei, dass ich andere manchmal als Konkurrenten sehe.", field: "Neid/Eifersucht" },
+  { text: "Ich bin sehr schnell eifersüchtig.", field: "Neid/Eifersucht" },
+];
+
+/* ====== Hilfsfunktionen ====== */
+function shuffle(array) {
   for (let i = array.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1)); 
-    [array[i], array[j]] = [array[j], array[i]]; 
+    const j = Math.floor(Math.random() * (i + 1));
+    [array[i], array[j]] = [array[j], array[i]];
   }
   return array;
 }
-
 const FIELDS = ["Angst/Sorge", "Ärger/Wut", "Enttäuschung/Trauer", "Neid/Eifersucht"];
 const FIELD_ORDER = FIELDS.slice();
 
 const qsWrap = document.getElementById('questions');
 const form = document.getElementById('form');
+let randomItems = shuffle(ITEMS.slice());
 
-function render(items) { 
+function render(items) {
   qsWrap.innerHTML = "";
   items.forEach((it, idx) => {
     const name = `q_${idx+1}`;
@@ -114,7 +183,7 @@ function render(items) {
     card.appendChild(scale);
     const legend = document.createElement('div');
     legend.className = 'legend';
-    legend.innerHTML = '<span>1 = trifft zu</span><span>5 = trifft nicht zu</span>';
+    legend.innerHTML = '<span>1 = trifft nicht zu</span><span>5 = trifft zu</span>';
     card.appendChild(legend);
 
     const meta = document.createElement('input');
@@ -124,8 +193,6 @@ function render(items) {
     qsWrap.appendChild(card);
   });
 }
-
-let randomItems = shuffle(ITEMS.slice());
 render(randomItems);
 
 document.getElementById('shuffleBtn').addEventListener('click', () => {
@@ -133,7 +200,6 @@ document.getElementById('shuffleBtn').addEventListener('click', () => {
   render(randomItems);
   document.getElementById('result').style.display = 'none';
 });
-
 document.getElementById('resetBtn').addEventListener('click', () => {
   form.reset();
   document.getElementById('result').style.display = 'none';
@@ -151,16 +217,23 @@ function compute() {
     const name = `q_${i+1}`;
     const sel = document.querySelector(`input[name=${name}]:checked`);
     if (!sel) return null;
-    const raw = Number(sel.value);
-    const intensity = 6 - raw;
+    const raw = Number(sel.value);  // 1..5 (1 = nicht zu, 5 = trifft zu)
     const field = document.querySelector(`input[name=${name}_field]`).value;
-    perField[field] += intensity;
+    perField[field] += raw; // höhere Werte => stärkere Ausprägung
   }
   return perField;
 }
 
 form.addEventListener('submit', (e) => {
   e.preventDefault();
+  // Sicherheit: prüfen, ob pro Feld 12 Items vorhanden sind
+  const perCounts = FIELDS.reduce((a,f)=>(a[f]=0,a),{});
+  ITEMS.forEach(it=>{ if(perCounts[it.field]!=null) perCounts[it.field]++; });
+  const allTwelve = FIELDS.every(f => perCounts[f]===12);
+  if(!allTwelve){
+    alert("Hinweis (nur für Setup): Aktuell sind nicht in jedem Emotionsfeld exakt 12 Items hinterlegt.");
+  }
+
   const perField = compute();
   if (!perField) return alert("Bitte alle Fragen beantworten.");
   const tbody = document.getElementById('resBody');
@@ -175,39 +248,87 @@ form.addEventListener('submit', (e) => {
   window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
 });
 
-function toCSV() {
-  const header = ["timestamp","teilnehmenden_code"];
-  const values = [new Date().toISOString(), (document.getElementById('pid').value||'').replace(/,/g,';')];
-  for (let i=0; i<randomItems.length; i++) {
-    header.push(`Q${i+1}_Antwort(1-5)`,`Q${i+1}_Feld`);
-    const sel = document.querySelector(`input[name=q_${i+1}]:checked`);
-    const field = document.querySelector(`input[name=q_${i+1}_field]`).value;
-    values.push(sel ? sel.value : "");
-    values.push(field);
+/* ====== PDF-Erstellung (A4 Hochformat) mit Antworten & Auswertung ====== */
+async function makePDF() {
+  const perField = compute();
+  if (!perField) { alert("Bitte zuerst alle Fragen beantworten und auswerten."); return; }
+
+  // Ergebnisse sichtbar halten
+  document.getElementById('result').style.display = 'block';
+
+  const { jsPDF } = window.jspdf;
+  const pdf = new jsPDF({ orientation: 'p', unit: 'pt', format: 'a4' });
+  const pageWidth = pdf.internal.pageSize.getWidth();
+  const pageHeight = pdf.internal.pageSize.getHeight();
+
+  // Kopie erzeugen, Skalen durch Antworttext ersetzen
+  const app = document.getElementById('app');
+  const clone = app.cloneNode(true);
+  clone.style.maxWidth = '800px';
+  clone.style.margin = '0 auto';
+  clone.classList.add('printable');
+
+  const cards = clone.querySelectorAll('.item');
+  for (let i=0; i<cards.length; i++) {
+    const name = `q_${i+1}`;
+    const sel = document.querySelector(`input[name=${name}]:checked`);
+    const scale = cards[i].querySelector('.scale');
+    const legend = cards[i].querySelector('.legend');
+    if (scale) scale.remove();
+    if (legend) legend.remove();
+    const p = document.createElement('p');
+    p.textContent = 'Antwort: ' + (sel ? sel.value : '—') + '  (1 = trifft nicht zu … 5 = trifft zu)';
+    p.style.margin = '6px 0 0 0';
+    p.style.fontSize = '12px';
+    cards[i].appendChild(p);
   }
-  header.push("Summe_Angst_Sorge","Klasse_Angst_Sorge","Summe_Aerger_Wut","Klasse_Aerger_Wut","Summe_Enttaeuschung_Trauer","Klasse_Enttaeuschung_Trauer","Summe_Neid_Eifersucht","Klasse_Neid_Eifersucht");
-  const sums = compute();
-  const row = values.concat([
-    sums["Angst/Sorge"], classify(sums["Angst/Sorge"]),
-    sums["Ärger/Wut"], classify(sums["Ärger/Wut"]),
-    sums["Enttäuschung/Trauer"], classify(sums["Enttäuschung/Trauer"]),
-    sums["Neid/Eifersucht"], classify(sums["Neid/Eifersucht"])
-  ]);
-  return header.join(",") + "\n" + row.join(",");
+
+  // Rendering in Canvas (hohe Auflösung), dann Seitenumbruch
+  const temp = document.createElement('div');
+  temp.style.position = 'fixed';
+  temp.style.left = '-10000px';
+  temp.style.top = '0';
+  temp.appendChild(clone);
+  document.body.appendChild(temp);
+
+  const canvas = await html2canvas(clone, { scale: 2, backgroundColor: '#ffffff' });
+  const imgData = canvas.toDataURL('image/png');
+
+  const margin = 30;
+  const imgWidth = pageWidth - margin*2;
+  const ratio = canvas.height / canvas.width;
+  let imgHeight = imgWidth * ratio;
+
+  if (imgHeight <= pageHeight - margin*2) {
+    pdf.addImage(imgData, 'PNG', margin, margin, imgWidth, imgHeight);
+  } else {
+    // Mehrseitig aufteilen
+    let yOffset = 0;
+    const sliceHeight = Math.floor((pageHeight - margin*2) * (canvas.width / (pageWidth - margin*2)));
+    while (yOffset < canvas.height) {
+      const pageCanvas = document.createElement('canvas');
+      const pageCtx = pageCanvas.getContext('2d');
+      pageCanvas.width = canvas.width;
+      pageCanvas.height = Math.min(sliceHeight, canvas.height - yOffset);
+      pageCtx.fillStyle = '#ffffff';
+      pageCtx.fillRect(0,0,pageCanvas.width,pageCanvas.height);
+      pageCtx.drawImage(canvas, 0, yOffset, pageCanvas.width, pageCanvas.height, 0, 0, pageCanvas.width, pageCanvas.height);
+      const pageData = pageCanvas.toDataURL('image/png');
+      pdf.addImage(pageData, 'PNG', margin, margin, imgWidth, (pageCanvas.height / canvas.width) * imgWidth);
+      yOffset += sliceHeight;
+      if (yOffset < canvas.height) pdf.addPage();
+    }
+  }
+
+  document.body.removeChild(temp);
+
+  const pid = (document.getElementById('pid').value || 'ohne_code').replace(/\W+/g,'_');
+  pdf.save(`emotionstyp_${pid}.pdf`);
 }
 
-document.getElementById('downloadBtn').addEventListener('click', () => {
-  const sums = compute();
-  if (!sums) return alert("Bitte zuerst alle Fragen beantworten und auswerten.");
-  const csv = toCSV();
-  const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url; a.download = 'emotionstyp_auswertung.csv';
-  document.body.appendChild(a); a.click(); a.remove();
-  setTimeout(()=>URL.revokeObjectURL(url), 2000);
-});
+document.getElementById('pdfBtn').addEventListener('click', makePDF);
 
+/* Optional: Teilnehmenden-Code aus URL übernehmen (?pid=...) */
 const urlParams = new URLSearchParams(location.search);
 const pidFromUrl = urlParams.get('pid');
 if (pidFromUrl) document.getElementById('pid').value = pidFromUrl;
